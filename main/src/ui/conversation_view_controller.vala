@@ -97,6 +97,34 @@ public class ConversationViewController : Object {
         }));
         ((Gtk.Window)view.get_root()).add_shortcut(shortcut);
 
+        // Font zoom keyboard shortcuts
+        // Ctrl++ or Ctrl+= - Increase font size
+        Shortcut zoom_in_shortcut = new Shortcut(new KeyvalTrigger(Key.plus, ModifierType.CONTROL_MASK), new CallbackAction(() => {
+            change_font_size(0.1);
+            return true;
+        }));
+        ((Gtk.Window)view.get_root()).add_shortcut(zoom_in_shortcut);
+
+        Shortcut zoom_in_equal_shortcut = new Shortcut(new KeyvalTrigger(Key.equal, ModifierType.CONTROL_MASK), new CallbackAction(() => {
+            change_font_size(0.1);
+            return true;
+        }));
+        ((Gtk.Window)view.get_root()).add_shortcut(zoom_in_equal_shortcut);
+
+        // Ctrl+- - Decrease font size
+        Shortcut zoom_out_shortcut = new Shortcut(new KeyvalTrigger(Key.minus, ModifierType.CONTROL_MASK), new CallbackAction(() => {
+            change_font_size(-0.1);
+            return true;
+        }));
+        ((Gtk.Window)view.get_root()).add_shortcut(zoom_out_shortcut);
+
+        // Ctrl+0 - Reset font size
+        Shortcut zoom_reset_shortcut = new Shortcut(new KeyvalTrigger(Key.@0, ModifierType.CONTROL_MASK), new CallbackAction(() => {
+            reset_font_size();
+            return true;
+        }));
+        ((Gtk.Window)view.get_root()).add_shortcut(zoom_reset_shortcut);
+
         SimpleAction close_conversation_action = new SimpleAction("close-current-conversation", null);
         close_conversation_action.activate.connect(() => {
             stream_interactor.get_module(ConversationManager.IDENTITY).close_conversation(conversation);
@@ -266,6 +294,39 @@ public class ConversationViewController : Object {
         }
 
         return key_controller.forward(view.chat_input.chat_text_view.text_view);
+    }
+
+    // Change font size by delta amount (positive to increase, negative to decrease)
+    private void change_font_size(double delta) {
+        var settings = app.settings;
+        double current_size = settings.font_size;
+        settings.font_size = current_size + delta;
+
+        // Update all visible message widgets and chat input with new font scale
+        update_font_scale_on_widgets(settings.font_size);
+    }
+
+    // Reset font size to default (1.0 = 100%)
+    private void reset_font_size() {
+        var settings = app.settings;
+        settings.font_size = 1.0;
+
+        // Update all visible message widgets and chat input with new font scale
+        update_font_scale_on_widgets(1.0);
+    }
+
+    // Update font scale on all visible message widgets and chat input
+    private void update_font_scale_on_widgets(double scale) {
+        // Update chat input text view
+        view.chat_input.chat_text_view.set_font_scale(scale);
+
+        // Update all message widgets in the conversation view
+        foreach (var item in view.conversation_frame.get_content_items()) {
+            ConversationSummary.MessageMetaItem? message_item = item as ConversationSummary.MessageMetaItem;
+            if (message_item != null) {
+                message_item.set_font_scale(scale);
+            }
+        }
     }
 }
 }

@@ -40,6 +40,9 @@ public class ChatTextView : Box {
     private uint wait_queue_resize;
     private SmileyConverter smiley_converter;
 
+    // Font scale factor for text zoom (1.0 = 100%, range: 0.5 to 2.0)
+    private double font_scale = 1.0;
+
     private TextTag italic_tag;
     private TextTag bold_tag;
     private TextTag strikethrough_tag;
@@ -48,6 +51,21 @@ public class ChatTextView : Box {
         valign = Align.CENTER;
         scrolled_window.set_child(text_view);
         this.append(scrolled_window);
+
+        // Initialize font scale from settings - will be set properly after construction
+        // Use get_root() to access the application through the widget hierarchy
+        Timeout.add(100, () => {
+            var root = this.get_root();
+            if (root is Gtk.ApplicationWindow) {
+                var app_window = (Gtk.ApplicationWindow)root;
+                var app = app_window.get_application() as Dino.Ui.Application;
+                if (app != null) {
+                    font_scale = app.settings.font_size;
+                    apply_font_scale();
+                }
+            }
+            return false;
+        });
 
         var text_input_key_events = new EventControllerKey() { name = "dino-text-input-view-key-events" };
         text_input_key_events.key_pressed.connect(on_text_input_key_press);
@@ -103,6 +121,31 @@ public class ChatTextView : Box {
                 text_view.buffer.apply_tag(tag, start_selection, end_selection);
             }
         }
+    }
+
+    // Apply the current font scale to the text view using CSS
+    private void apply_font_scale() {
+        // Calculate font size based on scale (base size 14px)
+        double base_font_size = 14.0;
+        double scaled_size = base_font_size * font_scale;
+
+        // Apply CSS style to set font size
+        var css_provider = new Gtk.CssProvider();
+        string css = ".chat-text-view { font-size: " + scaled_size.to_string() + "px; }";
+
+        try {
+            css_provider.load_from_data(css.data);
+            text_view.add_css_class("chat-text-view");
+            text_view.get_style_context().add_provider(css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
+        } catch (Error e) {
+            warning("Failed to apply font scale CSS: %s", e.message);
+        }
+    }
+
+    // Public method to update font scale dynamically
+    public void set_font_scale(double scale) {
+        font_scale = scale;
+        apply_font_scale();
     }
 
     public override void dispose() {

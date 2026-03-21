@@ -21,6 +21,9 @@ public class MessageMetaItem : ContentMetaItem {
     public Message.Marked marked { get; set; }
     public Plugins.ConversationItemWidgetInterface outer = null;
 
+    // Font scale factor for text zoom (1.0 = 100%, range: 0.5 to 2.0)
+    private double font_scale = 1.0;
+
     MessageItemEditMode? edit_mode = null;
     ChatTextViewController? controller = null;
     AdditionalInfo additional_info = AdditionalInfo.NONE;
@@ -35,6 +38,10 @@ public class MessageMetaItem : ContentMetaItem {
         base(content_item);
         message_item = content_item as MessageItem;
         this.stream_interactor = stream_interactor;
+
+        // Initialize font scale from saved settings
+        var app = GLib.Application.get_default() as Dino.Ui.Application;
+        font_scale = app != null ? app.settings.font_size : 1.0;
 
         stream_interactor.get_module(MessageCorrection.IDENTITY).received_correction.connect(on_updated_item);
         stream_interactor.get_module(MessageDeletion.IDENTITY).item_deleted.connect(on_updated_item);
@@ -103,6 +110,12 @@ public class MessageMetaItem : ContentMetaItem {
         var bold_attr = Pango.attr_weight_new(Pango.Weight.BOLD);
         var italic_attr = Pango.attr_style_new(Pango.Style.ITALIC);
         var strikethrough_attr = Pango.attr_strikethrough_new(true);
+
+        // Apply font scale to the entire message text
+        var scale_attr = Pango.attr_scale_new((float)font_scale);
+        scale_attr.start_index = 0;
+        scale_attr.end_index = uint.MAX;
+        attrs.insert(scale_attr.copy());
 
         // Prefix message with name instead of /me
         if (markup_text.has_prefix("/me ")) {
@@ -202,6 +215,12 @@ public class MessageMetaItem : ContentMetaItem {
 
     public void update_label() {
         generate_markup_text(content_item, label);
+    }
+
+    // Update font scale and refresh the label
+    public void set_font_scale(double scale) {
+        font_scale = scale;
+        update_label();
     }
 
     public override Object? get_widget(Plugins.ConversationItemWidgetInterface outer, Plugins.WidgetType type) {

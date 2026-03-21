@@ -689,6 +689,11 @@ public class ConversationView : Widget, Plugins.ConversationItemCollection, Plug
         return a.secondary_sort_indicator - b.secondary_sort_indicator;
     }
 
+    // Public method to get all content items (used for font scaling)
+    public Gee.TreeSet<ContentMetaItem> get_content_items() {
+        return content_items;
+    }
+
     private void clear() {
         was_upper = null;
         was_page_size = null;

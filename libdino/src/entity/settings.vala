@@ -12,6 +12,12 @@ public class Settings : Object {
         notifications_ = col_to_bool_or_default("notifications", true);
         convert_utf8_smileys_ = col_to_bool_or_default("convert_utf8_smileys", true);
         check_spelling = col_to_bool_or_default("check_spelling", true);
+        font_size_ = col_to_double_or_default("font_size", 1.0);
+    }
+
+    private double col_to_double_or_default(string key, double def) {
+        string? val = db.settings.select({db.settings.value}).with(db.settings.key, "=", key)[db.settings.value];
+        return val != null ? double.parse(val) : def;
     }
 
     private bool col_to_bool_or_default(string key, bool def) {
@@ -77,6 +83,21 @@ public class Settings : Object {
                 .value(db.settings.value, value.to_string())
                 .perform();
             check_spelling_ = value;
+        }
+    }
+
+    // Font size scaling factor (1.0 = 100%, range: 0.5 to 2.0)
+    private double font_size_;
+    public double font_size {
+        get { return font_size_; }
+        set {
+            // Clamp value to reasonable range (50% to 200%)
+            double clamped_value = value.clamp(0.5, 2.0);
+            db.settings.upsert()
+                .value(db.settings.key, "font_size", true)
+                .value(db.settings.value, clamped_value.to_string())
+                .perform();
+            font_size_ = clamped_value;
         }
     }
 
