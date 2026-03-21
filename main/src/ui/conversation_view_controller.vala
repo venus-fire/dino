@@ -320,6 +320,9 @@ public class ConversationViewController : Object {
         // Update chat input text view
         view.chat_input.chat_text_view.set_font_scale(scale);
 
+        // Update conversation view UI scale (affects spacing, avatars, etc.)
+        view.conversation_frame.set_ui_scale(scale);
+
         // Update all message widgets in the conversation view
         foreach (var item in view.conversation_frame.get_content_items()) {
             ConversationSummary.MessageMetaItem? message_item = item as ConversationSummary.MessageMetaItem;

@@ -48,6 +48,15 @@ public class ConversationSelector : Widget {
         });
 
         list_box.row_activated.connect(row_activated);
+
+        // Initialize UI scale from settings
+        Timeout.add(100, () => {
+            var app = GLib.Application.get_default() as Application;
+            if (app != null) {
+                set_ui_scale(app.settings.font_size);
+            }
+            return false;
+        });
     }
 
     public void row_activated(ListBoxRow r) {
@@ -160,6 +169,50 @@ public class ConversationSelector : Widget {
             }
         }
         return 0;
+    }
+
+    // Apply UI scale to sidebar (avatar sizes, text, spacing)
+    private double current_ui_scale = 1.0;
+    
+    public void set_ui_scale(double scale) {
+        current_ui_scale = scale.clamp(0.5, 2.0);
+        
+        // Apply CSS for scalable properties in sidebar
+        var css_provider = new CssProvider();
+        string css = @"
+            .navigation-sidebar list row {
+                padding: calc(6px * $(current_ui_scale)) calc(8px * $(current_ui_scale));
+            }
+            .navigation-sidebar picture.avatar {
+                min-width: calc(32px * $(current_ui_scale));
+                min-height: calc(32px * $(current_ui_scale));
+            }
+            .navigation-sidebar label {
+                font-size: calc(14px * $(current_ui_scale));
+            }
+            .navigation-sidebar .unread-count,
+            .navigation-sidebar .unread-count-notify {
+                font-size: calc(12px * $(current_ui_scale));
+                min-width: calc(20px * $(current_ui_scale));
+                min-height: calc(20px * $(current_ui_scale));
+            }
+        ";
+        
+        try {
+            css_provider.load_from_data(css.data);
+            Gtk.StyleContext.add_provider_for_display(
+                Gdk.Display.get_default(),
+                css_provider,
+                STYLE_PROVIDER_PRIORITY_APPLICATION
+            );
+        } catch (Error e) {
+            warning("Failed to apply sidebar UI scale CSS: %s", e.message);
+        }
+        
+        // Also update all existing rows
+        foreach (ConversationSelectorRow row in rows.values) {
+            row.set_ui_scale(current_ui_scale);
+        }
     }
 }
 

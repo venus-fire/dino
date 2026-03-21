@@ -5,12 +5,25 @@
 
 ## The Feature
 
-Adds text zoom to Dino XMPP client:
-- `Ctrl++` - Zoom in (increase font by 10%)
-- `Ctrl+-` - Zoom out (decrease font by 10%)
+Adds comprehensive UI zoom to Dino XMPP client:
+- `Ctrl++` - Zoom in (increase UI by 10%)
+- `Ctrl+-` - Zoom out (decrease UI by 10%)
 - `Ctrl+0` - Reset to default (100%)
 
+**What gets scaled:**
+- ✅ All text (messages, input, labels, timestamps)
+- ✅ Message padding and spacing
+- ✅ Avatar sizes (conversation view + sidebar)
+- ✅ File attachment boxes
+- ✅ Reaction buttons
+- ✅ Call widgets
+- ✅ Quote blocks
+- ✅ All margins and borders
+- ✅ Sidebar conversation rows
+
 Font size persists across restarts and only affects Dino (not system-wide).
+
+**Avatar sizes:** Reduced by 20% for better visual balance.
 
 ## Why This Exists
 
@@ -80,9 +93,10 @@ This fork modifies the following files from the original Dino source:
 | File | Changes |
 |------|---------|
 | `libdino/src/entity/settings.vala` | Added `font_size` setting |
-| `main/src/ui/conversation_content_view/message_widget.vala` | Apply font scaling to messages |
+| `main/src/ui/conversation_content_view/message_widget.vala` | Apply font scaling to message text |
 | `main/src/ui/chat_input/chat_text_view.vala` | Apply font scaling to input area |
-| `main/src/ui/conversation_view_controller.vala` | Add keyboard shortcuts |
+| `main/src/ui/conversation_content_view/conversation_view.vala` | Apply UI scaling (spacing, avatars, widgets) |
+| `main/src/ui/conversation_view_controller.vala` | Add keyboard shortcuts and coordinate scaling |
 
 ## Known Issues
 

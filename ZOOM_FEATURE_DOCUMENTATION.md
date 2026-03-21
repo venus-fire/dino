@@ -16,7 +16,32 @@ A custom text zoom feature was implemented that:
 - Provides per-application font scaling (only affects Dino)
 - Persists settings across restarts
 - Uses keyboard shortcuts for quick adjustment
-- Scales both message text and input area
+- Scales both text AND entire UI (spacing, avatars, widgets, etc.)
+
+## Features
+
+### What Gets Scaled
+
+✅ **Text Elements:**
+- Chat message text
+- Chat input text area
+- Timestamps and names
+- All UI labels
+
+✅ **UI Elements:**
+- Message padding and spacing
+- Avatar sizes (conversation view + sidebar)
+- File attachment boxes
+- Call widgets
+- Reaction buttons
+- Quote blocks
+- All margins and borders
+- Sidebar conversation rows
+- Unread count badges
+
+**Note:** Avatar sizes are reduced by 20% from default for better visual balance.
+
+This ensures a consistent, proportional zoom experience across the entire application.
 
 ## Implementation Details
 
@@ -171,6 +196,108 @@ Shortcut zoom_reset_shortcut = new Shortcut(
 **Note:** In GTK4 Vala bindings, number keys use the `@` prefix (e.g., `Key.@0`, `Key.@1`) because they conflict with numeric literals.
 
 #### 5. `main/src/ui/conversation_content_view/conversation_view.vala`
+
+**Purpose:** Apply UI scaling to entire conversation view (spacing, avatars, widgets)
+
+**Changes:**
+- Added `current_ui_scale` private field
+- Added `set_ui_scale(double scale)` public method
+- Applies CSS-based scaling to:
+  - Message box padding
+  - Avatar sizes
+  - File/call widget margins
+  - Reaction button sizes
+  - Quote block styling
+  - All spacing elements
+
+**Key Implementation:**
+```vala
+public void set_ui_scale(double scale) {
+    current_ui_scale = scale.clamp(0.5, 2.0);
+    
+    var css_provider = new CssProvider();
+    string css = @"
+        .dino-conversation {
+            --dino-ui-scale: $(current_ui_scale);
+        }
+        .dino-conversation .message-box {
+            padding: calc(3px * $(current_ui_scale)) ...;
+        }
+        .dino-conversation picture.avatar {
+            min-width: calc(48px * $(current_ui_scale));
+            min-height: calc(48px * $(current_ui_scale));
+        }
+        // ... more scalable properties
+    ";
+    
+    css_provider.load_from_data(css.data);
+    this.get_style_context().add_provider(css_provider, STYLE_PROVIDER_PRIORITY_APPLICATION);
+}
+```
+
+**Namespace:** `Dino.Ui.ConversationSummary.ConversationView`
+
+#### 7. `main/src/ui/conversation_selector/conversation_selector.vala`
+
+**Purpose:** Apply UI scaling to sidebar conversation list
+
+**Changes:**
+- Added `current_ui_scale` private field
+- Added `set_ui_scale(double scale)` public method
+- Applies CSS-based scaling to:
+  - Sidebar row padding
+  - Avatar sizes
+  - Label font sizes
+  - Unread count badge sizes
+- Updates all existing rows when scale changes
+
+**Key Implementation:**
+```vala
+public void set_ui_scale(double scale) {
+    current_ui_scale = scale.clamp(0.5, 2.0);
+    
+    var css_provider = new CssProvider();
+    string css = @"
+        .navigation-sidebar list row {
+            padding: calc(6px * $(current_ui_scale)) ...;
+        }
+        .navigation-sidebar picture.avatar {
+            min-width: calc(32px * $(current_ui_scale));
+            min-height: calc(32px * $(current_ui_scale));
+        }
+        .navigation-sidebar label {
+            font-size: calc(14px * $(current_ui_scale));
+        }
+    ";
+    
+    css_provider.load_from_data(css.data);
+    Gtk.StyleContext.add_provider_for_display(...);
+    
+    // Update all existing rows
+    foreach (ConversationSelectorRow row in rows.values) {
+        row.set_ui_scale(current_ui_scale);
+    }
+}
+```
+
+#### 8. `main/src/ui/conversation_selector/conversation_selector_row.vala`
+
+**Purpose:** Apply per-row avatar scaling
+
+**Changes:**
+- Added `set_ui_scale(double scale)` public method
+- Updates avatar widget dimensions directly
+
+**Key Implementation:**
+```vala
+public void set_ui_scale(double scale) {
+    double ui_scale = scale.clamp(0.5, 2.0);
+    picture.width_request = (int)(32 * ui_scale);
+    picture.height_request = (int)(32 * ui_scale);
+}
+```
+
+#### 9. `main/src/ui/conversation_view_controller.vala` (Updated)
 
 **Purpose:** Expose content items for font scale updates
 

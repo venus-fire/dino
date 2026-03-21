@@ -353,6 +353,15 @@ public class ConversationSelectorRow : ListBoxRow {
              return _("Just now");
          }
     }
+
+    // Apply UI scale to this row
+    public void set_ui_scale(double scale) {
+        double ui_scale = scale.clamp(0.5, 2.0);
+        
+        // Update avatar size (20% smaller than original 40px)
+        picture.width_request = (int)(32 * ui_scale);
+        picture.height_request = (int)(32 * ui_scale);
+    }
 }
 
 }

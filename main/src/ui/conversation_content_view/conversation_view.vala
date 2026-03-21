@@ -82,6 +82,15 @@ public class ConversationView : Widget, Plugins.ConversationItemCollection, Plug
         SimpleActionGroup action_group = new SimpleActionGroup();
         action_group.insert(action_action);
         this.insert_action_group("action", action_group);
+
+        // Initialize UI scale from settings
+        Timeout.add(100, () => {
+            var app = GLib.Application.get_default() as Application;
+            if (app != null) {
+                set_ui_scale(app.settings.font_size);
+            }
+            return false;
+        });
     }
 
     public ConversationView init(StreamInteractor stream_interactor) {
@@ -692,6 +701,65 @@ public class ConversationView : Widget, Plugins.ConversationItemCollection, Plug
     // Public method to get all content items (used for font scaling)
     public Gee.TreeSet<ContentMetaItem> get_content_items() {
         return content_items;
+    }
+
+    // Apply UI scale to entire conversation view (spacing, avatars, widgets, etc.)
+    private double current_ui_scale = 1.0;
+    
+    public void set_ui_scale(double scale) {
+        current_ui_scale = scale.clamp(0.5, 2.0);
+        
+        // Apply CSS for scalable properties - use global selectors that match actual widget classes
+        var css_provider = new CssProvider();
+        string css = @"
+            .message-box {
+                padding: calc(3px * $(current_ui_scale)) calc(15px * $(current_ui_scale)) calc(3px * $(current_ui_scale)) calc(15px * $(current_ui_scale));
+            }
+            .message-box:not(.has-skeleton) {
+                padding-left: calc(58px * $(current_ui_scale));
+            }
+            .has-skeleton {
+                margin-top: calc(10px * $(current_ui_scale));
+            }
+            picture.avatar {
+                min-width: calc(38px * $(current_ui_scale));
+                min-height: calc(38px * $(current_ui_scale));
+            }
+            .file-box, .call-box {
+                margin: calc(12px * $(current_ui_scale)) calc(16px * $(current_ui_scale)) calc(12px * $(current_ui_scale)) calc(12px * $(current_ui_scale));
+            }
+            .reaction-grid button {
+                min-height: calc(16px * $(current_ui_scale));
+                min-width: calc(30px * $(current_ui_scale));
+                padding: calc(4px * $(current_ui_scale));
+            }
+            .file-image-widget {
+                border-radius: calc(6px * $(current_ui_scale));
+            }
+            .file-details {
+                border-radius: calc(5px * $(current_ui_scale));
+                padding: calc(5px * $(current_ui_scale)) calc(10px * $(current_ui_scale));
+            }
+            .dino-quote {
+                border-left-width: calc(3px * $(current_ui_scale));
+                padding: calc(10px * $(current_ui_scale));
+            }
+        ";
+        
+        try {
+            css_provider.load_from_data(css.data);
+            Gtk.StyleContext.add_provider_for_display(
+                Gdk.Display.get_default(),
+                css_provider,
+                STYLE_PROVIDER_PRIORITY_APPLICATION
+            );
+        } catch (Error e) {
+            warning("Failed to apply UI scale CSS: %s", e.message);
+        }
+    }
+
+    public double get_ui_scale() {
+        return current_ui_scale;
     }
 
     private void clear() {
