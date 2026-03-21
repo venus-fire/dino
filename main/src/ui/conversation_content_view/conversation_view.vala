@@ -180,7 +180,9 @@ public class ConversationView : Widget, Plugins.ConversationItemCollection, Plug
     private void update_highlight(double x, double y) {
         if (is_highlight_fixed()) return;
 
-        if (currently_highlighted != null && (last_y - y).abs() <= 2) {
+        // Scale the dead zone with UI scale to ensure proper hover detection
+        double hover_dead_zone = 2.0 * current_ui_scale;
+        if (currently_highlighted != null && (last_y - y).abs() <= hover_dead_zone) {
             return;
         }
 
@@ -729,9 +731,11 @@ public class ConversationView : Widget, Plugins.ConversationItemCollection, Plug
                 margin: calc(12px * $(current_ui_scale)) calc(16px * $(current_ui_scale)) calc(12px * $(current_ui_scale)) calc(12px * $(current_ui_scale));
             }
             .reaction-grid button {
-                min-height: calc(16px * $(current_ui_scale));
-                min-width: calc(30px * $(current_ui_scale));
-                padding: calc(4px * $(current_ui_scale));
+                min-height: calc(24px * $(current_ui_scale));
+                min-width: calc(28px * $(current_ui_scale));
+                padding: calc(2px * $(current_ui_scale));
+                font-size: calc(20px * $(current_ui_scale));
+                border-radius: calc(4px * $(current_ui_scale));
             }
             .file-image-widget {
                 border-radius: calc(6px * $(current_ui_scale));

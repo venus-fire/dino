@@ -125,10 +125,11 @@ This fork adds a comprehensive text and UI zoom feature to address small, hard-t
 | `libdino/src/entity/settings.vala` | Added `font_size` setting (persisted to SQLite) |
 | `main/src/ui/conversation_content_view/message_widget.vala` | Apply Pango scale to message labels |
 | `main/src/ui/chat_input/chat_text_view.vala` | Apply CSS font scaling to input area |
-| `main/src/ui/conversation_content_view/conversation_view.vala` | Apply CSS UI scaling (spacing, avatars, widgets) |
+| `main/src/ui/conversation_content_view/conversation_view.vala` | Apply CSS UI scaling (spacing, avatars, widgets, reactions) |
 | `main/src/ui/conversation_selector/conversation_selector.vala` | Apply CSS UI scaling to sidebar |
 | `main/src/ui/conversation_selector/conversation_selector_row.vala` | Apply per-row avatar scaling |
 | `main/src/ui/conversation_view_controller.vala` | Add keyboard shortcut handlers and coordinate scaling |
+| `main/src/ui/main_window.vala` | Add resizable sidebar (drag right edge to resize) |
 
 ### Technical Notes
 

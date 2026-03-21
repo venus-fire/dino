@@ -44,6 +44,97 @@ public class MainWindow : Adw.ApplicationWindow {
         add_shortcut(shortcut);
     }
 
+    // Sidebar resize with mouse drag
+    private bool sidebar_resizing = false;
+    private double sidebar_resize_start_x = 0;
+    private double sidebar_resize_start_fraction = 0;
+    
+    private void setup_sidebar_resize() {
+        // Wait for widgets to be realized
+        Timeout.add(500, () => {
+            if (conversation_selector == null) return true;
+            
+            // Find the ScrolledWindow parent - it might be nested
+            Widget? parent = conversation_selector.get_parent();
+            Gtk.ScrolledWindow? scrolled = null;
+            
+            while (parent != null && scrolled == null) {
+                if (parent is Gtk.ScrolledWindow) {
+                    scrolled = parent as Gtk.ScrolledWindow;
+                    break;
+                }
+                parent = parent.get_parent();
+            }
+            
+            if (scrolled == null) {
+                warning("Could not find ScrolledWindow parent for conversation_selector");
+                return false;
+            }
+            
+            // Add motion controller to detect when mouse is at sidebar edge
+            var motion_controller = new Gtk.EventControllerMotion();
+            motion_controller.motion.connect((x, y) => {
+                // Show resize cursor at right edge of sidebar (within 8 pixels)
+                double sidebar_width = scrolled.get_allocated_width();
+                if (x >= sidebar_width - 8 && x <= sidebar_width) {
+                    scrolled.set_cursor_from_name("col-resize");
+                } else {
+                    scrolled.set_cursor_from_name("default");
+                }
+            });
+            motion_controller.leave.connect(() => {
+                scrolled.set_cursor_from_name("default");
+            });
+            scrolled.add_controller(motion_controller);
+            
+            // Add click gesture for resizing
+            var click_gesture = new Gtk.GestureClick();
+            click_gesture.pressed.connect((n_press, x, y) => {
+                double sidebar_width = scrolled.get_allocated_width();
+                // Check if click is at the right edge (within 12 pixels for easier grabbing)
+                if (x >= sidebar_width - 12 && x <= sidebar_width + 4) {
+                    sidebar_resizing = true;
+                    // Store the offset from the edge where the user clicked
+                    sidebar_resize_start_x = x - sidebar_width;
+                    sidebar_resize_start_fraction = navigation_split_view.sidebar_width_fraction;
+                    stderr.printf("DEBUG: Resize START - fraction=%.3f, sidebar_width=%.1f, click_offset=%.1f\n", 
+                        sidebar_resize_start_fraction, sidebar_width, sidebar_resize_start_x);
+                    // Temporarily expand min/max to allow resizing
+                    navigation_split_view.min_sidebar_width = 150;
+                    navigation_split_view.max_sidebar_width = 800;
+                }
+            });
+            scrolled.add_controller(click_gesture);
+            
+            // Add motion controller for drag
+            var drag_motion = new Gtk.EventControllerMotion();
+            drag_motion.motion.connect((x, y) => {
+                if (sidebar_resizing) {
+                    double window_width = navigation_split_view.get_allocated_width();
+                    // Calculate new sidebar width: current mouse position minus the offset where user grabbed
+                    double new_sidebar_width = x - sidebar_resize_start_x;
+                    // Convert to fraction
+                    double new_fraction = new_sidebar_width / window_width;
+                    new_fraction = new_fraction.clamp(0.15, 0.5);
+                    stderr.printf("DEBUG: Resize DRAG - mouse_x=%.1f, offset=%.1f, new_width=%.1f, fraction=%.3f\n", 
+                        x, sidebar_resize_start_x, new_sidebar_width, new_fraction);
+                    navigation_split_view.sidebar_width_fraction = new_fraction;
+                }
+            });
+            scrolled.add_controller(drag_motion);
+            
+            // Add release controller
+            var release_controller = new Gtk.GestureClick();
+            release_controller.released.connect((n_press, x, y) => {
+                stderr.printf("DEBUG: Resize RELEASE\n");
+                sidebar_resizing = false;
+            });
+            scrolled.add_controller(release_controller);
+            
+            return false;
+        });
+    }
+
     public MainWindow(Application application, StreamInteractor stream_interactor, Database db, Config config) {
         Object(application : application);
         this.db = db;
@@ -54,6 +145,12 @@ public class MainWindow : Adw.ApplicationWindow {
         this.add_css_class("dino-main");
 
         ((Widget)this).realize.connect(restore_window_size);
+
+        // Setup sidebar resize after UI is constructed
+        Timeout.add(100, () => {
+            setup_sidebar_resize();
+            return false;
+        });
 
         conversation_selector.init(stream_interactor);
         conversation_selector.conversation_selected.connect_after(() => { navigation_split_view.show_content = true; });
