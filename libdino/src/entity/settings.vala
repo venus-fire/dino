@@ -13,6 +13,7 @@ public class Settings : Object {
         convert_utf8_smileys_ = col_to_bool_or_default("convert_utf8_smileys", true);
         check_spelling = col_to_bool_or_default("check_spelling", true);
         font_size_ = col_to_double_or_default("font_size", 1.0);
+        sidebar_width_fraction_ = col_to_double_or_default("sidebar_width_fraction", 0.25);
     }
 
     private double col_to_double_or_default(string key, double def) {
@@ -98,6 +99,21 @@ public class Settings : Object {
                 .value(db.settings.value, clamped_value.to_string())
                 .perform();
             font_size_ = clamped_value;
+        }
+    }
+
+    // Sidebar width fraction (0.15 to 0.5 of window width)
+    private double sidebar_width_fraction_;
+    public double sidebar_width_fraction {
+        get { return sidebar_width_fraction_; }
+        set {
+            // Clamp value to reasonable range (15% to 50%)
+            double clamped_value = value.clamp(0.15, 0.5);
+            db.settings.upsert()
+                .value(db.settings.key, "sidebar_width_fraction", true)
+                .value(db.settings.value, clamped_value.to_string())
+                .perform();
+            sidebar_width_fraction_ = clamped_value;
         }
     }
 

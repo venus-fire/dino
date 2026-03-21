@@ -128,6 +128,12 @@ public class MainWindow : Adw.ApplicationWindow {
             release_controller.released.connect((n_press, x, y) => {
                 stderr.printf("DEBUG: Resize RELEASE\n");
                 sidebar_resizing = false;
+                // Save sidebar width to settings
+                var app = GLib.Application.get_default() as Application;
+                if (app != null) {
+                    app.settings.sidebar_width_fraction = navigation_split_view.sidebar_width_fraction;
+                    stderr.printf("DEBUG: Saved sidebar_width_fraction=%.3f\n", navigation_split_view.sidebar_width_fraction);
+                }
             });
             scrolled.add_controller(release_controller);
             
@@ -149,6 +155,11 @@ public class MainWindow : Adw.ApplicationWindow {
         // Setup sidebar resize after UI is constructed
         Timeout.add(100, () => {
             setup_sidebar_resize();
+            // Restore saved sidebar width
+            var app = application as Application;
+            if (app != null) {
+                navigation_split_view.sidebar_width_fraction = app.settings.sidebar_width_fraction;
+            }
             return false;
         });
 
