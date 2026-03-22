@@ -29,7 +29,7 @@ public class MessageMetaItem : ContentMetaItem {
     AdditionalInfo additional_info = AdditionalInfo.NONE;
 
     ulong realize_id = -1;
-    ulong marked_notify_handler_id = -1;
+    ulong mark_notify_handler_id = -1;
     uint pending_timeout_id = -1;
 
     public Label label = new Label("") { use_markup=true, xalign=0, selectable=true, wrap=true, wrap_mode=Pango.WrapMode.WORD_CHAR, hexpand=true, vexpand=true };
@@ -56,22 +56,22 @@ public class MessageMetaItem : ContentMetaItem {
             // Create read receipt indicator for sent messages
             create_read_receipt_indicator();
             
+            // Listen to mark property changes (already bound from Message → MessageItem → ContentMetaItem)
             if (!(message.marked in Message.MARKED_RECEIVED)) {
-                var binding = message.bind_property("marked", this, "marked");
-                marked_notify_handler_id = this.notify["marked"].connect(() => {
+                mark_notify_handler_id = this.notify["mark"].connect(() => {
                     // Currently "pending", but not anymore
                     if (additional_info == AdditionalInfo.PENDING &&
-                            message.marked != Message.Marked.SENDING && message.marked != Message.Marked.UNSENT) {
+                            mark != Message.Marked.SENDING && mark != Message.Marked.UNSENT) {
                         update_label();
                     }
 
                     // Currently "error", but not anymore
-                    if (additional_info == AdditionalInfo.DELIVERY_FAILED && message.marked != Message.Marked.ERROR) {
+                    if (additional_info == AdditionalInfo.DELIVERY_FAILED && mark != Message.Marked.ERROR) {
                         update_label();
                     }
 
                     // Currently not error, but should be
-                    if (additional_info != AdditionalInfo.DELIVERY_FAILED && message.marked == Message.Marked.ERROR) {
+                    if (additional_info != AdditionalInfo.DELIVERY_FAILED && mark == Message.Marked.ERROR) {
                         update_label();
                     }
 
@@ -79,10 +79,9 @@ public class MessageMetaItem : ContentMetaItem {
                     update_read_receipt_indicator();
 
                     // Nothing bad can happen anymore
-                    if (message.marked in Message.MARKED_RECEIVED) {
-                        binding.unbind();
-                        this.disconnect(marked_notify_handler_id);
-                        marked_notify_handler_id = -1;
+                    if (mark in Message.MARKED_RECEIVED) {
+                        this.disconnect(mark_notify_handler_id);
+                        mark_notify_handler_id = -1;
                     }
                 });
             }
@@ -106,8 +105,7 @@ public class MessageMetaItem : ContentMetaItem {
     private void update_read_receipt_indicator() {
         if (read_receipt_indicator == null) return;
         
-        Message message = message_item.message;
-        switch (message.marked) {
+        switch (mark) {
             case Message.Marked.RECEIVED:
                 read_receipt_indicator.icon_name = "dino-tick-symbolic";
                 read_receipt_indicator.set_tooltip_text(_("Delivered"));
@@ -400,8 +398,8 @@ public class MessageMetaItem : ContentMetaItem {
         stream_interactor.get_module(MessageCorrection.IDENTITY).received_correction.disconnect(on_updated_item);
         stream_interactor.get_module(MessageDeletion.IDENTITY).item_deleted.disconnect(on_updated_item);
         this.notify["in-edit-mode"].disconnect(on_in_edit_mode_changed);
-        if (marked_notify_handler_id != -1) {
-            this.disconnect(marked_notify_handler_id);
+        if (mark_notify_handler_id != -1) {
+            this.disconnect(mark_notify_handler_id);
         }
         if (realize_id != -1) {
             label.disconnect(realize_id);
