@@ -33,6 +33,9 @@ public class MessageMetaItem : ContentMetaItem {
     uint pending_timeout_id = -1;
 
     public Label label = new Label("") { use_markup=true, xalign=0, selectable=true, wrap=true, wrap_mode=Pango.WrapMode.WORD_CHAR, hexpand=true, vexpand=true };
+    
+    // Read receipt indicator (always visible for sent messages)
+    private Image? read_receipt_indicator = null;
 
     public MessageMetaItem(ContentItem content_item, StreamInteractor stream_interactor) {
         base(content_item);
@@ -49,35 +52,94 @@ public class MessageMetaItem : ContentMetaItem {
         label.activate_link.connect(on_label_activate_link);
 
         Message message = ((MessageItem) content_item).message;
-        if (message.direction == Message.DIRECTION_SENT && !(message.marked in Message.MARKED_RECEIVED)) {
-            var binding = message.bind_property("marked", this, "marked");
-            marked_notify_handler_id = this.notify["marked"].connect(() => {
-                // Currently "pending", but not anymore
-                if (additional_info == AdditionalInfo.PENDING &&
-                        message.marked != Message.Marked.SENDING && message.marked != Message.Marked.UNSENT) {
-                    update_label();
-                }
+        if (message.direction == Message.DIRECTION_SENT) {
+            // Create read receipt indicator for sent messages
+            create_read_receipt_indicator();
+            
+            if (!(message.marked in Message.MARKED_RECEIVED)) {
+                var binding = message.bind_property("marked", this, "marked");
+                marked_notify_handler_id = this.notify["marked"].connect(() => {
+                    // Currently "pending", but not anymore
+                    if (additional_info == AdditionalInfo.PENDING &&
+                            message.marked != Message.Marked.SENDING && message.marked != Message.Marked.UNSENT) {
+                        update_label();
+                    }
 
-                // Currently "error", but not anymore
-                if (additional_info == AdditionalInfo.DELIVERY_FAILED && message.marked != Message.Marked.ERROR) {
-                    update_label();
-                }
+                    // Currently "error", but not anymore
+                    if (additional_info == AdditionalInfo.DELIVERY_FAILED && message.marked != Message.Marked.ERROR) {
+                        update_label();
+                    }
 
-                // Currently not error, but should be
-                if (additional_info != AdditionalInfo.DELIVERY_FAILED && message.marked == Message.Marked.ERROR) {
-                    update_label();
-                }
+                    // Currently not error, but should be
+                    if (additional_info != AdditionalInfo.DELIVERY_FAILED && message.marked == Message.Marked.ERROR) {
+                        update_label();
+                    }
 
-                // Nothing bad can happen anymore
-                if (message.marked in Message.MARKED_RECEIVED) {
-                    binding.unbind();
-                    this.disconnect(marked_notify_handler_id);
-                    marked_notify_handler_id = -1;
-                }
-            });
+                    // Update read receipt indicator
+                    update_read_receipt_indicator();
+
+                    // Nothing bad can happen anymore
+                    if (message.marked in Message.MARKED_RECEIVED) {
+                        binding.unbind();
+                        this.disconnect(marked_notify_handler_id);
+                        marked_notify_handler_id = -1;
+                    }
+                });
+            }
         }
 
         update_label();
+        update_read_receipt_indicator();
+    }
+    
+    private void create_read_receipt_indicator() {
+        read_receipt_indicator = new Image() {
+            opacity = 0.5,
+            pixel_size = 14,
+            halign = Align.START,
+            valign = Align.START,
+            margin_top = 2
+        };
+        read_receipt_indicator.set_tooltip_text(_("Message status"));
+    }
+    
+    private void update_read_receipt_indicator() {
+        if (read_receipt_indicator == null) return;
+        
+        Message message = message_item.message;
+        switch (message.marked) {
+            case Message.Marked.RECEIVED:
+                read_receipt_indicator.icon_name = "dino-tick-symbolic";
+                read_receipt_indicator.set_tooltip_text(_("Delivered"));
+                read_receipt_indicator.visible = true;
+                break;
+            case Message.Marked.READ:
+                read_receipt_indicator.icon_name = "dino-double-tick-symbolic";
+                read_receipt_indicator.set_tooltip_text(_("Read"));
+                read_receipt_indicator.visible = true;
+                break;
+            case Message.Marked.SENT:
+                read_receipt_indicator.icon_name = "dino-tick-symbolic";
+                read_receipt_indicator.set_tooltip_text(_("Sent"));
+                read_receipt_indicator.visible = true;
+                break;
+            case Message.Marked.SENDING:
+            case Message.Marked.UNSENT:
+                read_receipt_indicator.icon_name = "dino-clock-symbolic";
+                read_receipt_indicator.set_tooltip_text(_("Sending…"));
+                read_receipt_indicator.visible = true;
+                break;
+            case Message.Marked.ERROR:
+            case Message.Marked.WONTSEND:
+                read_receipt_indicator.icon_name = "dino-dialog-warning-symbolic";
+                Util.force_error_color(read_receipt_indicator);
+                read_receipt_indicator.set_tooltip_text(_("Unable to send message"));
+                read_receipt_indicator.visible = true;
+                break;
+            default:
+                read_receipt_indicator.visible = false;
+                break;
+        }
     }
 
     private void generate_markup_text(ContentItem item, Label label) {
@@ -228,7 +290,19 @@ public class MessageMetaItem : ContentMetaItem {
 
         this.notify["in-edit-mode"].connect(on_in_edit_mode_changed);
 
-        outer.set_widget(label, Plugins.WidgetType.GTK4, 2);
+        // Create a horizontal box to hold the label and read receipt indicator
+        var message_box = new Box(Orientation.HORIZONTAL, 6) {
+            hexpand = true,
+            halign = Align.START
+        };
+        message_box.append(label);
+        
+        // Add read receipt indicator if available (for sent messages)
+        if (read_receipt_indicator != null) {
+            message_box.append(read_receipt_indicator);
+        }
+
+        outer.set_widget(message_box, Plugins.WidgetType.GTK4, 2);
 
         if (message_item.message.quoted_item_id > 0) {
             var quoted_content_item = stream_interactor.get_module(ContentItemStore.IDENTITY).get_item_by_id(message_item.conversation, message_item.message.quoted_item_id);
@@ -241,7 +315,7 @@ public class MessageMetaItem : ContentMetaItem {
                 outer.set_widget(quote_widget, Plugins.WidgetType.GTK4, 1);
             }
         }
-        return label;
+        return message_box;
     }
 
     public override Gee.List<Plugins.MessageAction>? get_item_actions(Plugins.WidgetType type) {
@@ -310,6 +384,7 @@ public class MessageMetaItem : ContentMetaItem {
             this.content_item = content_item;
             message_item = content_item as MessageItem;
             update_label();
+            update_read_receipt_indicator();
         }
     }
 
@@ -338,6 +413,11 @@ public class MessageMetaItem : ContentMetaItem {
             label.unparent();
             label.dispose();
             label = null;
+        }
+        if (read_receipt_indicator != null) {
+            read_receipt_indicator.unparent();
+            read_receipt_indicator.dispose();
+            read_receipt_indicator = null;
         }
         base.dispose();
     }
