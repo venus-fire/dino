@@ -1,0 +1,72 @@
+Source: dino-im
+Section: net
+Priority: optional
+Maintainer: Venus <venus@venus-fire.github.io>
+Build-Depends: debhelper-compat (= 13),
+               meson (>= 1.3.0),
+               ninja-build,
+               valac,
+               libgtk-4-dev,
+               libadwaita-1-dev (>= 1.5),
+               libgee-0.8-dev,
+               libgpgme-dev,
+               libgcrypt20-dev,
+               libsqlite3-dev,
+               libqrencode-dev,
+               libnice-dev,
+               libomemo-c-dev,
+               libsrtp2-dev,
+               libsoup-3.0-dev,
+               libwebrtc-audio-processing-dev,
+               gettext,
+               libgstreamer1.0-dev,
+               libgstreamer-plugins-base1.0-dev,
+               libgnutls28-dev,
+               libxml2-dev,
+               libprotobuf-dev,
+               protobuf-compiler-grpc,
+               libgstreamer-rtp1.0-dev,
+               libgstreamer-plugins-bad1.0-dev
+Standards-Version: 4.7.0
+Homepage: https://github.com/venus-fire/dino
+Vcs-Git: https://github.com/venus-fire/dino.git
+Vcs-Browser: https://github.com/venus-fire/dino
+
+Package: dino-im
+Architecture: any
+Depends: ${shlibs:Depends},
+         ${misc:Depends},
+         gstreamer1.0-plugins-base,
+         gstreamer1.0-plugins-good,
+         gstreamer1.0-plugins-bad
+Recommends: dino-im-plugins
+Description: Modern XMPP ("Jabber") instant messaging client
+ Dino is a modern XMPP instant messaging client for Linux, built with GTK4.
+ It features a clean interface and supports:
+  - One-on-one and group chats
+  - End-to-end encryption (OMEMO, OpenPGP)
+  - File transfers
+  - Voice/video calls (via GStreamer)
+  - Message corrections and reactions
+  - Read receipts (XEP-0333)
+  - Text zoom feature
+ .
+ This fork includes additional features:
+  - AI-generated text zoom (Ctrl++, Ctrl+-, Ctrl+0)
+  - Visible read receipt indicators
+  - Resizable sidebar
+ .
+ This package provides the main Dino application.
+
+Package: dino-im-plugins
+Architecture: any
+Depends: ${shlibs:Depends},
+         ${misc:Depends},
+         dino-im (= ${binary:Version})
+Description: Optional plugins for Dino IM
+ This package contains optional plugins for Dino IM including:
+  - OMEMO encryption
+  - OpenPGP encryption
+  - Voice/video calls (RTP)
+  - ICE for P2P communication
+  - HTTP file upload

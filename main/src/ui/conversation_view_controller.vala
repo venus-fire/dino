@@ -23,6 +23,11 @@ public class ConversationViewController : Object {
     private Binding? display_name_binding = null;
 
     private const string[] KEY_COMBINATION_CLOSE_CONVERSATION = {"<Ctrl>W", null};
+    
+    // Read marker tracking - track all sent messages
+    private Gee.HashMap<int, ulong> message_mark_handlers = new Gee.HashMap<int, ulong>();
+    private ulong? chat_marker_handler = null;
+    private Conversation? current_tracked_conversation = null;
 
     public ConversationViewController(MainWindow main_window, ConversationView view, StreamInteractor stream_interactor) {
         this.main_window = main_window;
@@ -136,16 +141,53 @@ public class ConversationViewController : Object {
     public void select_conversation(Conversation? conversation, bool default_initialize_conversation) {
         if (this.conversation != null) {
             conversation.notify["encryption"].disconnect(update_file_upload_status);
+            // Disconnect all old mark notify handlers
+            foreach (var entry in message_mark_handlers) {
+                var msg = stream_interactor.get_module(MessageStorage.IDENTITY).get_message_by_id(entry.key, this.conversation);
+                if (msg != null) {
+                    msg.disconnect(entry.value);
+                }
+            }
+            message_mark_handlers.clear();
+            current_tracked_conversation = null;
         }
 
         this.conversation = conversation;
+        current_tracked_conversation = conversation;
 
-        // Set list model onto list view
-//        Dino.Application app = GLib.Application.get_default() as Dino.Application;
-//        var map_list_model = get_conversation_content_model(new ContentItemMetaModel(app.db, conversation, stream_interactor), stream_interactor);
-//        NoSelection selection_model = new NoSelection(map_list_model);
-//        view.list_view.set_model(selection_model);
-//        view.at_current_content = true;
+        // Set up read marker tracking for the new conversation
+        if (conversation != null) {
+            // Listen to ALL sent messages
+            var messages = stream_interactor.get_module(MessageStorage.IDENTITY).get_messages(conversation);
+            foreach (Entities.Message msg in messages) {
+                if (msg.direction == Message.DIRECTION_SENT) {
+                    var handler = msg.notify["marked"].connect(() => {
+                        if (current_tracked_conversation == conversation) {
+                            update_read_marker();
+                        }
+                    });
+                    message_mark_handlers[msg.id] = handler;
+                }
+            }
+            
+            // Also listen for new messages
+            stream_interactor.get_module(ContentItemStore.IDENTITY).new_item.connect((item, conv) => {
+                if (conv == conversation && item is MessageItem) {
+                    var msg_item = item as MessageItem;
+                    if (msg_item.message.direction == Message.DIRECTION_SENT) {
+                        var handler = msg_item.message.notify["marked"].connect(() => {
+                            if (current_tracked_conversation == conversation) {
+                                update_read_marker();
+                            }
+                        });
+                        message_mark_handlers[msg_item.message.id] = handler;
+                    }
+                    update_read_marker();
+                }
+            });
+            
+            update_read_marker();
+        }
 
         conversation.notify["encryption"].connect(update_file_upload_status);
 
@@ -202,6 +244,64 @@ public class ConversationViewController : Object {
         }
 
         main_window.conversation_window_title.subtitle = str;
+    }
+    
+    private void update_read_marker() {
+        if (conversation == null) return;
+
+        // Get all messages sorted by time
+        var messages = stream_interactor.get_module(MessageStorage.IDENTITY).get_messages(conversation);
+        if (messages.size == 0) {
+            view.update_read_marker(null);
+            return;
+        }
+        
+        // Find the last message overall
+        Entities.Message? last_message = null;
+        foreach (Entities.Message msg in messages) {
+            if (last_message == null || msg.time.compare(last_message.time) > 0) {
+                last_message = msg;
+            }
+        }
+        
+        // Only show read marker if the last message has been read
+        // (i.e., all messages have been read)
+        if (last_message == null || 
+            !(last_message.marked == Message.Marked.READ || last_message.marked == Message.Marked.ACKNOWLEDGED)) {
+            view.update_read_marker(null);
+            return;
+        }
+        
+        // Find the last sent message that has been READ
+        Entities.Message? last_read_sent_message = null;
+        foreach (Entities.Message msg in messages) {
+            if (msg.direction == Message.DIRECTION_SENT &&
+                (msg.marked == Message.Marked.READ || msg.marked == Message.Marked.ACKNOWLEDGED)) {
+                last_read_sent_message = msg;
+            }
+        }
+
+        // Only show the bar if at least one message has been read
+        if (last_read_sent_message == null) {
+            view.update_read_marker(null);
+            return;
+        }
+
+        // Get the display name of who read it
+        string display_name = Util.get_participant_display_name(
+            stream_interactor,
+            conversation,
+            last_read_sent_message.counterpart ?? conversation.counterpart
+        );
+
+        string read_text;
+        if (conversation.type_ == Conversation.Type.CHAT) {
+            read_text = _("%s has read up to this point").printf(display_name);
+        } else {
+            read_text = _("Read up to this point");
+        }
+
+        view.update_read_marker(read_text);
     }
 
     private async void on_clipboard_paste() {

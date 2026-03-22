@@ -1,0 +1,16 @@
+dino-im (0.2.0) unstable; urgency=medium
+
+  * Release v0.2 - Read Receipts Feature
+    - Add visible read receipt indicators for all sent messages
+    - Show different icons for sending, sent, delivered, read, and error states
+    - Indicators are always visible (not just in message headers)
+    - Real-time updates as message status changes
+    - Works with merged/consecutive messages
+    - Full XEP-0333 Chat Markers support
+
+  * Previous release v0.1 - Text Zoom Feature
+    - Add AI-generated text zoom feature (Ctrl++, Ctrl+-, Ctrl+0)
+    - Add resizable sidebar
+    - Full UI scaling for all elements
+
+ -- Venus <venus@venus-fire.github.io>  Sun, 22 Mar 2026 09:30:00 +0000

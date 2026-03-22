@@ -76,6 +76,9 @@ public class ConversationItemSkeleton : Plugins.ConversationItemWidgetInterface,
             reactions_controller.init();
         }
 
+        // Set up mark binding for all items (needed for merged messages too)
+        setup_mark_binding();
+        
         update_margin();
     }
 
@@ -97,8 +100,16 @@ public class ConversationItemSkeleton : Plugins.ConversationItemWidgetInterface,
             update_time();
         }
 
+        update_received_mark();
+    }
+    
+    private void setup_mark_binding() {
+        // Set up mark binding for all messages (including merged ones)
         item.bind_property("mark", this, "item-mark", BindingFlags.SYNC_CREATE);
-        this.notify["item-mark"].connect_after(update_received_mark);
+        this.notify["item-mark"].connect_after(() => {
+            update_received_mark();
+            update_margin();
+        });
         update_received_mark();
     }
 
@@ -121,7 +132,13 @@ public class ConversationItemSkeleton : Plugins.ConversationItemWidgetInterface,
         name_label.visible = show_skeleton;
         time_label.visible = show_skeleton;
         encryption_image.visible = show_skeleton;
-        received_image.visible = show_skeleton;
+        
+        // Always show received_image for sent messages with any status, even when merged
+        if (content_meta_item != null && content_meta_item.mark != Message.Marked.NONE) {
+            received_image.visible = true;
+        } else {
+            received_image.visible = show_skeleton;
+        }
 
         if (show_skeleton || content_meta_item == null) {
             main_grid.add_css_class("has-skeleton");
@@ -189,15 +206,26 @@ public class ConversationItemSkeleton : Plugins.ConversationItemWidgetInterface,
 
     private void update_received_mark() {
         switch (content_meta_item.mark) {
-            case Message.Marked.RECEIVED: 
+            case Message.Marked.SENT:
                 received_image.icon_name = "dino-tick-symbolic";
+                received_image.tooltip_text = Util.string_if_tooltips_active(_("Sent"));
+                break;
+            case Message.Marked.SENDING:
+            case Message.Marked.UNSENT:
+                received_image.icon_name = "document-save-symbolic";
+                received_image.tooltip_text = Util.string_if_tooltips_active(_("Sending…"));
+                break;
+            case Message.Marked.RECEIVED:
+                received_image.icon_name = "dino-double-tick-symbolic";
                 received_image.tooltip_text = Util.string_if_tooltips_active(_("Delivered"));
                 break;
             case Message.Marked.READ:
+            case Message.Marked.ACKNOWLEDGED:
                 received_image.icon_name = "dino-double-tick-symbolic";
                 received_image.tooltip_text = Util.string_if_tooltips_active(_("Read"));
                 break;
             case Message.Marked.WONTSEND:
+            case Message.Marked.ERROR:
                 received_image.icon_name = "dino-dialog-warning-symbolic";
                 Util.force_error_color(received_image);
                 Util.force_error_color(time_label);

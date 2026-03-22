@@ -45,6 +45,36 @@
                     </object>
                 </child>
                 <child>
+                    <object class="GtkBox" id="read_marker_box">
+                        <property name="orientation">horizontal</property>
+                        <property name="spacing">8</property>
+                        <property name="margin-start">16</property>
+                        <property name="margin-end">16</property>
+                        <property name="margin-top">6</property>
+                        <property name="margin-bottom">6</property>
+                        <style>
+                            <class name="dino-read-marker"/>
+                        </style>
+                        <child>
+                            <object class="GtkImage" id="read_marker_icon">
+                                <property name="icon-name">dino-double-tick-symbolic</property>
+                                <property name="pixel-size">14</property>
+                                <property name="opacity">0.6</property>
+                            </object>
+                        </child>
+                        <child>
+                            <object class="GtkLabel" id="read_marker_label">
+                                <property name="hexpand">True</property>
+                                <property name="xalign">0</property>
+                                <property name="label"></property>
+                                <attributes>
+                                    <attribute name="style" value="italic"/>
+                                </attributes>
+                            </object>
+                        </child>
+                    </object>
+                </child>
+                <child>
                     <object class="DinoUiChatInputView" id="chat_input">
                     </object>
                 </child>
