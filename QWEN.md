@@ -8,8 +8,80 @@
 - File transfers
 - Voice/video calls (via GStreamer)
 - Message corrections and reactions
+- Read receipts with visual indicators
 
-**This fork** includes an **AI-generated text zoom feature** (keyboard shortcuts: `Ctrl++`, `Ctrl+-`, `Ctrl+0`) that was implemented to address [GitHub issue #978](https://github.com/dino/dino/issues/978).
+**This fork** includes:
+- **AI-generated text zoom feature** (keyboard shortcuts: `Ctrl++`, `Ctrl+-`, `Ctrl+0`) - addresses [GitHub issue #978](https://github.com/dino/dino/issues/978)
+- **Visible read receipt indicators** - shows message status (sending, sent, delivered, read) for all sent messages
+- **Resizable sidebar** - drag the right edge to resize
+
+## Repository
+
+| | |
+|---|---|
+| **Fork URL** | https://github.com/venus-fire/dino |
+| **Upstream** | https://github.com/dino/dino |
+| **License** | GPL-3.0 |
+
+## GitHub Maintenance
+
+### Release Workflow
+
+```bash
+# 1. Stage changes
+git add <modified_files>
+
+# 2. Commit with descriptive message
+git commit -m "Add feature name
+
+- Bullet point 1
+- Bullet point 2
+
+Feature: Brief description"
+
+# 3. Create annotated tag
+git tag -a vX.Y -m "Release title
+
+Feature list:
+- Feature 1
+- Feature 2
+
+Build: GTK4 X.X.X, libadwaita X.X.X"
+
+# 4. Push to GitHub
+git push origin master
+git push origin vX.Y
+```
+
+### Version History
+
+| Version | Date | Features |
+|---------|------|----------|
+| v0.2 | March 22, 2026 | Read receipt indicators, XEP-0333 support |
+| v0.1 | March 20, 2026 | Text zoom feature, resizable sidebar |
+
+### Syncing with Upstream
+
+```bash
+# Fetch upstream changes
+git fetch upstream
+
+# Rebase your master on upstream master
+git checkout master
+git rebase upstream/master
+
+# Resolve conflicts if any, then force push
+git push origin master --force-with-lease
+```
+
+### Creating a Release on GitHub
+
+1. Go to https://github.com/venus-fire/dino/releases
+2. Click "Draft a new release"
+3. Select the tag (e.g., `v0.2`)
+4. Add release notes from the tag message
+5. Optionally attach build artifacts
+6. Publish release
 
 ## Technology Stack
 
@@ -141,6 +213,41 @@ This fork adds a comprehensive text and UI zoom feature to address small, hard-t
 
 > ⚠️ **Disclaimer:** This feature was entirely AI-generated ("vibe coded"). It's experimental and has not undergone human code review. Use at your own risk.
 
+## Read Receipts Feature
+
+Visual indicators showing message delivery and read status for sent messages.
+
+### Status Indicators
+
+| Icon | Status | Description |
+|------|--------|-------------|
+| 🕐 Clock | Sending… | Message is being sent to server |
+| ✓ Single tick | Sent/Delivered | Sent to server or delivered to client |
+| ✓✓ Double tick | Read | Recipient has viewed the message |
+| ⚠️ Warning | Error | Message failed to send |
+
+### How It Works
+
+1. **XEP-0333 Chat Markers** protocol is used for delivery/read notifications
+2. **Both clients must support XEP-0333** (Dino, Gajim, Conversations on Android)
+3. **Indicators are always visible** next to sent messages (not just in headers)
+4. **Real-time updates** as message status changes
+
+### Modified Files
+
+| File | Changes |
+|------|---------|
+| `main/src/ui/conversation_content_view/message_widget.vala` | Added read receipt indicator image and update logic |
+
+### Technical Notes
+
+- Works with 1-on-1 chats only (not group chats/MUC)
+- Requires XEP-0333 support from recipient's client
+- Uses `dino-tick-symbolic` and `dino-double-tick-symbolic` icons
+- Message states: `NONE` → `SENT` → `RECEIVED` → `READ`
+
+**Documentation:** See `READ_RECEIPTS_FEATURE.md` for full details.
+
 ## Development Conventions
 
 ### Code Style
@@ -221,22 +328,45 @@ gdb --args ./build/main/dino
 
 ## Resources
 
-- **Official Website:** https://dino.im/
+### Official Dino
+- **Website:** https://dino.im/
 - **GitHub:** https://github.com/dino/dino
 - **Wiki:** https://github.com/dino/dino/wiki
 - **XMPP Chat:** `chat@dino.im`
-- **License:** GPL-3.0
 
-## Known Issues (Zoom Feature)
+### This Fork
+- **GitHub:** https://github.com/venus-fire/dino
+- **Releases:** https://github.com/venus-fire/dino/releases
 
+### Documentation
+- `README.md` - Project overview and build instructions
+- `QWEN.md` - This file (development context)
+- `ZOOM_FEATURE_DOCUMENTATION.md` - Text zoom feature details
+- `READ_RECEIPTS_FEATURE.md` - Read receipts feature details
+
+### Development
+- **GTK4 Docs:** https://docs.gtk.org/gtk4/
+- **libadwaita Docs:** https://gnome.pages.gitlab.gnome.org/libadwaita/doc/
+- **Vala Docs:** https://docs.vala.dev/
+- **XEP-0333:** https://xmpp.org/extensions/xep-0333.html (Chat Markers)
+
+## Known Issues
+
+### Zoom Feature
 - No graphical settings UI (keyboard shortcuts only)
 - Font size is global (not per-conversation)
 - Minimal testing performed
 - May have undiscovered bugs
 
+### Read Receipts Feature
+- Only works in 1-on-1 chats (not group chats)
+- Requires recipient's client to support XEP-0333
+- No settings UI toggle (uses global setting from Preferences)
+- May not work with all XMPP servers
+
 ---
 
-**Last Updated:** March 20, 2026  
-**Dino Version:** Master branch (fork with AI zoom feature)  
+**Last Updated:** March 22, 2026  
+**Dino Version:** v0.2 (fork with zoom + read receipts)  
 **GTK Version:** 4.18.6  
 **libadwaita Version:** 1.7.6
