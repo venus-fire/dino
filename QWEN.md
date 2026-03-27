@@ -1,5 +1,34 @@
 # Dino XMPP Client - Project Context
 
+> **⚠️ AI INITIALIZATION: Read All Documentation First**
+> 
+> Before making any code changes or answering questions about this project:
+> 
+> 1. **Read all documentation files:**
+>    - `README.md` - Feature overview and build instructions
+>    - `FORK_STATUS.md` - Current fork status, upstream divergence, maintenance options
+>    - `ZOOM_FEATURE_DOCUMENTATION.md` - Text zoom feature implementation
+>    - `READ_RECEIPTS_FEATURE.md` - Read receipts user guide
+>    - `READ_RECEIPTS_IMPLEMENTATION.md` - Read receipts technical details
+>    - This file (`QWEN.md`) - Development context and conventions
+> 
+> 2. **Understand the current state:**
+>    - Version: v0.3 (read receipt positioning fix)
+>    - 13 commits ahead of upstream, 3 commits behind
+>    - Key features: UI zoom, read receipts with XEP-0333, resizable sidebar
+> 
+> 3. **Check git status before changes:**
+>    ```bash
+>    git status && git log -n 3 --oneline
+>    ```
+> 
+> 4. **Build and verify after changes:**
+>    ```bash
+>    meson compile -C build && ./build/main/dino
+>    ```
+> 
+> **Do not proceed with code changes until you have read all relevant documentation.**
+
 ## Project Overview
 
 **Dino** is a modern XMPP ("Jabber") instant messaging client for Linux, built with **GTK4** and **Vala**. It features a clean interface and supports:
