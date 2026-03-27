@@ -188,17 +188,18 @@ public class ConversationView : Widget, Plugins.ConversationItemCollection, Plug
 
         last_y = y;
 
-        // Get widget under pointer
+        // Get widget under pointer by accumulating heights (accounts for margins properly)
         int h = 0;
         Widget? w = null;
         foreach (Plugins.MetaConversationItem item in meta_items) {
             Widget widget = widgets[item];
+            // Include margins in height calculation since we're using GTK margin properties
             h += widget.get_allocated_height() + widget.margin_top + widget.margin_bottom;
             if (h >= y) {
                 w = widget;
                 break;
             }
-        };
+        }
 
         if (currently_highlighted != null) currently_highlighted.remove_css_class("highlight");
 
@@ -707,28 +708,23 @@ public class ConversationView : Widget, Plugins.ConversationItemCollection, Plug
 
     // Apply UI scale to entire conversation view (spacing, avatars, widgets, etc.)
     private double current_ui_scale = 1.0;
-    
+
     public void set_ui_scale(double scale) {
         current_ui_scale = scale.clamp(0.5, 2.0);
-        
-        // Apply CSS for scalable properties - use global selectors that match actual widget classes
+
+        // Update all conversation item skeletons with new scale
+        // This ensures GTK allocation system knows exact widget dimensions
+        foreach (var skeleton in item_item_skeletons.values) {
+            skeleton.set_ui_scale(current_ui_scale);
+        }
+
+        // Apply CSS for scalable properties that can't be set via GTK properties
+        // Keep only avatar sizes and widget-specific styling (no margin/padding that affects allocation)
         var css_provider = new CssProvider();
         string css = @"
-            .message-box {
-                padding: calc(3px * $(current_ui_scale)) calc(15px * $(current_ui_scale)) calc(3px * $(current_ui_scale)) calc(15px * $(current_ui_scale));
-            }
-            .message-box:not(.has-skeleton) {
-                padding-left: calc(58px * $(current_ui_scale));
-            }
-            .has-skeleton {
-                margin-top: calc(10px * $(current_ui_scale));
-            }
             picture.avatar {
                 min-width: calc(38px * $(current_ui_scale));
                 min-height: calc(38px * $(current_ui_scale));
-            }
-            .file-box, .call-box {
-                margin: calc(12px * $(current_ui_scale)) calc(16px * $(current_ui_scale)) calc(12px * $(current_ui_scale)) calc(12px * $(current_ui_scale));
             }
             .reaction-grid button {
                 min-height: calc(24px * $(current_ui_scale));
@@ -748,8 +744,11 @@ public class ConversationView : Widget, Plugins.ConversationItemCollection, Plug
                 border-left-width: calc(3px * $(current_ui_scale));
                 padding: calc(10px * $(current_ui_scale));
             }
+            .file-box, .call-box {
+                margin: calc(12px * $(current_ui_scale)) calc(16px * $(current_ui_scale)) calc(12px * $(current_ui_scale)) calc(12px * $(current_ui_scale));
+            }
         ";
-        
+
         try {
             css_provider.load_from_data(css.data);
             Gtk.StyleContext.add_provider_for_display(

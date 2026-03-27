@@ -49,6 +49,13 @@ Visual indicators showing message delivery and read status:
 
 **Requirements:** Both your client and the recipient's client must support XEP-0333 (Dino, Gajim, Conversations on Android). Works in 1-on-1 chats only (not group chats).
 
+### 3. Hover/Click Fix (v0.4)
+
+- **Fixed:** Mouse hover now correctly matches visual message position at all zoom levels
+- **Fixed:** Reaction emoji buttons appear below messages (not inline)
+- **Fixed:** Merged messages properly aligned without extra indentation
+- **Technical:** Changed from CSS `calc()` to GTK `margin_*` properties for accurate hit detection
+
 ## Why This Exists
 
 The official Dino project has [issue #978](https://github.com/dino/dino/issues/978) 
@@ -119,11 +126,13 @@ This fork modifies the following files from the original Dino source:
 | `libdino/src/entity/settings.vala` | Added `font_size` setting |
 | `main/src/ui/conversation_content_view/message_widget.vala` | Apply font scaling to message text |
 | `main/src/ui/chat_input/chat_text_view.vala` | Apply font scaling to input area |
-| `main/src/ui/conversation_content_view/conversation_view.vala` | Apply UI scaling (spacing, avatars, widgets, reactions) |
+| `main/src/ui/conversation_content_view/conversation_view.vala` | UI scaling; fixed hover detection with GTK allocation |
+| `main/src/ui/conversation_content_view/conversation_item_skeleton.vala` | GTK margin-based scaling; fixed reaction positioning |
 | `main/src/ui/conversation_selector/conversation_selector.vala` | Apply UI scaling to sidebar |
 | `main/src/ui/conversation_selector/conversation_selector_row.vala` | Apply per-row avatar scaling |
 | `main/src/ui/conversation_view_controller.vala` | Add keyboard shortcuts and coordinate scaling |
 | `main/src/ui/main_window.vala` | Add resizable sidebar (drag right edge) |
+| `main/data/style.css` | Removed conflicting CSS padding/margin rules |
 
 ## Known Issues
 

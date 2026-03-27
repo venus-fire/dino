@@ -4,15 +4,22 @@
 
 | Metric | Value |
 |--------|-------|
-| **Fork Version** | v0.3 |
+| **Fork Version** | v0.4 |
 | **Based on Upstream** | Dino commit `53b52b04` (March 2026) |
-| **Commits Ahead** | 13 (our features) |
+| **Commits Ahead** | 14 (our features) |
 | **Commits Behind** | 3 (upstream bug fixes) |
-| **Last Updated** | March 26, 2026 |
+| **Last Updated** | March 27, 2026 |
 
 ## Features Added in This Fork
 
-### v0.3 - Read Receipt Positioning Fix (Current)
+### v0.4 - Hover/Click Positioning Fix (Current)
+- Fixed mouse hover detection offset at zoomed levels
+- Reactions emoji buttons now appear below messages (not inline)
+- Merged messages properly aligned without double indentation
+- Changed from CSS `calc()` to GTK `margin_*` properties for layout
+- Documentation: This fix resolves GTK allocation mismatch with CSS scaling
+
+### v0.3 - Read Receipt Positioning Fix
 - Fixed read receipt checkmarks appearing on separate lines for merged messages
 - Checkmarks now appear directly after message text using horizontal Box layout
 - Increased checkmark size to 20px for better visibility

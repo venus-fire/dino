@@ -18,6 +18,8 @@ public class ConversationItemSkeleton : Plugins.ConversationItemWidgetInterface,
 
     private HashMap<int, Widget> content_widgets = new HashMap<int, Widget>();
     private Box message_content_box = null;
+    private Box message_vertical_box = null;
+    private double current_ui_scale = 1.0;
 
     private bool show_skeleton_ = false;
     public bool show_skeleton {
@@ -60,17 +62,22 @@ public class ConversationItemSkeleton : Plugins.ConversationItemWidgetInterface,
             hexpand = true,
             halign = Align.START
         };
-        
+
+        // Create vertical box to stack message content and reactions
+        message_vertical_box = new Box(Orientation.VERTICAL, 2) {
+            hexpand = true,
+            halign = Align.START
+        };
+
         // Create received_image - will be added to message_content_box
         received_image = new Image() {
             opacity = 0.4,
             pixel_size = 20,
-            margin_top = 2,
-            margin_start = 6,
             hexpand = false,
             halign = Align.START,
             valign = Align.START
         };
+        update_received_image_margins();
 
         widget = item.get_widget(this, Plugins.WidgetType.GTK4) as Widget;
         if (widget != null) {
@@ -95,7 +102,13 @@ public class ConversationItemSkeleton : Plugins.ConversationItemWidgetInterface,
 
         // Set up mark binding for all items (needed for merged messages too)
         setup_mark_binding();
-        
+
+        // Initialize UI scale from settings
+        var app = GLib.Application.get_default() as Application;
+        if (app != null) {
+            set_ui_scale(app.settings.font_size);
+        }
+
         update_margin();
     }
 
@@ -133,27 +146,44 @@ public class ConversationItemSkeleton : Plugins.ConversationItemWidgetInterface,
     public void set_widget(Object object, Plugins.WidgetType type, int priority) {
         foreach (var content_widget in content_widgets.values) {
             content_widget.unparent();
-            message_content_box.remove(content_widget);
+            if (message_vertical_box != null) message_vertical_box.remove(content_widget);
         }
 
         content_widgets[priority] = (Widget) object;
-        
-        // Add content widgets to the message_content_box in priority order (0 to 4)
-        for (int i = 0; i < 5; i++) {
+
+        // Clear boxes by removing children
+        Widget? child;
+        while ((child = message_vertical_box.get_first_child()) != null) {
+            message_vertical_box.remove(child);
+        }
+        while ((child = message_content_box.get_first_child()) != null) {
+            message_content_box.remove(child);
+        }
+
+        // Add message content (priority 0-2) to horizontal box with received_image
+        for (int i = 0; i <= 2; i++) {
             if (content_widgets.has_key(i)) {
                 message_content_box.append(content_widgets[i]);
             }
         }
-        
-        // Ensure received_image is at the end of the box (after message content)
-        if (received_image.parent != null) {
-            message_content_box.remove(received_image);
-        }
+        // Ensure received_image is at the end of the horizontal box (after message content)
         message_content_box.append(received_image);
-        
-        // Attach message_content_box to the grid if not already attached
+
+        // Add reactions (priority 3) and other widgets to vertical box below message
+        for (int i = 3; i < 5; i++) {
+            if (content_widgets.has_key(i)) {
+                message_vertical_box.append(content_widgets[i]);
+            }
+        }
+
+        // Attach horizontal box (message + checkmarks) to grid
         if (message_content_box.parent != main_grid) {
             main_grid.attach(message_content_box, 1, 1, 4, 1);
+        }
+
+        // Attach vertical box (reactions) below the horizontal box
+        if (message_vertical_box.parent != main_grid) {
+            main_grid.attach(message_vertical_box, 1, 2, 4, 1);
         }
     }
 
@@ -170,11 +200,45 @@ public class ConversationItemSkeleton : Plugins.ConversationItemWidgetInterface,
             received_image.visible = false;
         }
 
+        // Don't use has-skeleton CSS class for margins - we handle it directly
+        // This CSS class is only kept for any external styling that might depend on it
         if (show_skeleton || content_meta_item == null) {
             main_grid.add_css_class("has-skeleton");
         } else {
             main_grid.remove_css_class("has-skeleton");
         }
+
+        // Apply scaled margins using GTK properties instead of CSS calc()
+        // Base margin top only for skeleton messages (with avatar)
+        int base_margin_top = show_skeleton ? 10 : 0;
+        main_grid.margin_top = (int)(base_margin_top * current_ui_scale);
+        main_grid.margin_bottom = 0;
+
+        // Padding values scaled by UI scale
+        int padding_top_bottom = (int)(3 * current_ui_scale);
+        int padding_sides = (int)(15 * current_ui_scale);
+        // Merged messages need extra left space where avatar would be
+        int padding_left_merged = (int)(58 * current_ui_scale);
+
+        // Non-merged messages (show_skeleton=true) use regular padding
+        // Merged messages (show_skeleton=false) use larger left margin for avatar space
+        if (show_skeleton) {
+            main_grid.margin_start = padding_sides;
+        } else {
+            main_grid.margin_start = padding_left_merged;
+        }
+        main_grid.margin_end = padding_sides;
+    }
+
+    public void set_ui_scale(double scale) {
+        current_ui_scale = scale.clamp(0.5, 2.0);
+        update_received_image_margins();
+        update_margin();
+    }
+
+    private void update_received_image_margins() {
+        received_image.margin_top = (int)(2 * current_ui_scale);
+        received_image.margin_start = (int)(6 * current_ui_scale);
     }
 
     private void update_edit_mode() {
@@ -366,6 +430,11 @@ public class ConversationItemSkeleton : Plugins.ConversationItemWidgetInterface,
             message_content_box.unparent();
             message_content_box.dispose();
             message_content_box = null;
+        }
+        if (message_vertical_box != null) {
+            message_vertical_box.unparent();
+            message_vertical_box.dispose();
+            message_vertical_box = null;
         }
         base.dispose();
     }

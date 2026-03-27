@@ -13,8 +13,8 @@
 >    - This file (`QWEN.md`) - Development context and conventions
 > 
 > 2. **Understand the current state:**
->    - Version: v0.3 (read receipt positioning fix)
->    - 13 commits ahead of upstream, 3 commits behind
+>    - Version: v0.4 (hover/click positioning fix)
+>    - 14 commits ahead of upstream, 3 commits behind
 >    - Key features: UI zoom, read receipts with XEP-0333, resizable sidebar
 > 
 > 3. **Check git status before changes:**
@@ -86,6 +86,7 @@ git push origin vX.Y
 
 | Version | Date | Features |
 |---------|------|----------|
+| v0.4 | March 27, 2026 | Fixed hover/click positioning (GTK margin properties instead of CSS calc); reactions appear below messages |
 | v0.3 | March 26, 2026 | Fixed read receipt positioning (checkmarks now appear directly after message text) |
 | v0.2 | March 22, 2026 | Read receipt indicators, XEP-0333 support |
 | v0.1 | March 20, 2026 | Text zoom feature, resizable sidebar |
@@ -264,19 +265,22 @@ This fork adds a comprehensive text and UI zoom feature to address small, hard-t
 | `libdino/src/entity/settings.vala` | Added `font_size` setting (persisted to SQLite) |
 | `main/src/ui/conversation_content_view/message_widget.vala` | Apply Pango scale to message labels |
 | `main/src/ui/chat_input/chat_text_view.vala` | Apply CSS font scaling to input area |
-| `main/src/ui/conversation_content_view/conversation_view.vala` | Apply CSS UI scaling (spacing, avatars, widgets, reactions) |
+| `main/src/ui/conversation_content_view/conversation_view.vala` | Apply UI scaling; fixed hover detection using GTK allocation |
+| `main/src/ui/conversation_content_view/conversation_item_skeleton.vala` | GTK margin-based scaling; fixed reaction positioning |
 | `main/src/ui/conversation_selector/conversation_selector.vala` | Apply CSS UI scaling to sidebar |
 | `main/src/ui/conversation_selector/conversation_selector_row.vala` | Apply per-row avatar scaling |
 | `main/src/ui/conversation_view_controller.vala` | Add keyboard shortcut handlers and coordinate scaling |
 | `main/src/ui/main_window.vala` | Add resizable sidebar (drag right edge to resize) |
+| `main/data/style.css` | Removed conflicting CSS padding/margin rules |
 
 ### Technical Notes
 
 - Font/UI scale range: 0.5–2.0 (50%–200%)
 - Settings stored in `~/.local/share/dino/dino.db`
-- Uses Pango attributes for text, CSS for UI elements
+- Uses Pango attributes for text, GTK margin properties for UI layout
 - GTK4-compatible implementation
-- CSS `calc()` used for dynamic scaling of all measurements
+- CSS `calc()` used only for non-layout properties (avatar sizes, reactions, etc.)
+- Layout-critical spacing uses GTK `margin_*` properties for accurate hit detection
 
 > ⚠️ **Disclaimer:** This feature was entirely AI-generated ("vibe coded"). It's experimental and has not undergone human code review. Use at your own risk.
 

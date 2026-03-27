@@ -44,16 +44,17 @@ window.dino-main .dino-conversation .message-box.highlight:not(.highlight-once) 
     background: @window_bg_color;
 }
 
+/* Margin/padding now handled by GTK properties in conversation_item_skeleton.vala */
 window.dino-main .dino-conversation .message-box {
-    padding: 3px 15px 3px 15px;
+    /* padding: 3px 15px 3px 15px; */
 }
 
 window.dino-main .dino-conversation .has-skeleton {
-    margin-top: 10px;
+    /* margin-top: 10px; */
 }
 
 window.dino-main .dino-conversation .message-box:not(.has-skeleton) {
-    padding-left: 58px;
+    /* padding-left: 58px; */
 }
 
 window.dino-main .unread-count-notify {
