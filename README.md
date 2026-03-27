@@ -37,12 +37,15 @@ Visual indicators showing message delivery and read status:
 |------|--------|-------------|
 | 🕐 Clock | Sending… | Message is being sent to server |
 | ✓ Single tick | Sent | Message sent to server |
-| ✓✓ Double tick | Delivered/Read | Recipient received or read the message |
+| ✓✓ Double tick | Delivered | Recipient's client received it |
+| ✓✓ Double tick | Read | Recipient opened/read the message (hover to see "Read" tooltip) |
 | ⚠️ Warning | Error | Failed to send |
 
 **"Read up to this point" bar** appears at the bottom of the conversation (between last message and compose bar) when messages have been read by the recipient.
 
 **Checkmarks appear directly after each message text**, properly aligned even for merged (stacked) messages.
+
+**Note:** Delivered and Read both show double-tick icon - hover over the icon to see the tooltip distinction ("Delivered" vs "Read").
 
 **Requirements:** Both your client and the recipient's client must support XEP-0333 (Dino, Gajim, Conversations on Android). Works in 1-on-1 chats only (not group chats).
 
