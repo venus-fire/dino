@@ -6,3 +6,40 @@ Makefile
 .idea
 .sqlite3
 gschemas.compiled
+
+# Vala generated files
+*.c
+*.h
+*.deps
+*.vapi
+*_vala.c
+*_vala.h
+
+# Build artifacts
+*.so
+*.a
+*.la
+.libs/
+.deps/
+
+# Meson
+meson-private/
+meson-info/
+meson-logs/
+subprojects/
+
+# Generated resources
+main/resources.c
+*/gresources.xml
+
+# Desktop files
+*.desktop
+*.service
+
+# Compiled Python
+__pycache__/
+*.pyc
+
+# OS files
+.DS_Store
+Thumbs.db
