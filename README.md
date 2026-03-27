@@ -32,14 +32,19 @@ Font size persists across restarts and only affects Dino (not system-wide).
 ### 2. Read Receipt Indicators (XEP-0333 Chat Markers)
 
 Visual indicators showing message delivery and read status:
-- 🕐 Clock icon - Sending…
-- ✓ Single tick - Sent/Delivered
-- ✓✓ Double tick - Read by recipient
-- ⚠️ Warning icon - Error (failed to send)
+
+| Icon | Status | Description |
+|------|--------|-------------|
+| 🕐 Clock | Sending… | Message is being sent to server |
+| ✓ Single tick | Sent | Message sent to server |
+| ✓✓ Double tick | Delivered/Read | Recipient received or read the message |
+| ⚠️ Warning | Error | Failed to send |
+
+**"Read up to this point" bar** appears at the bottom of the conversation (between last message and compose bar) when messages have been read by the recipient.
 
 **Checkmarks appear directly after each message text**, properly aligned even for merged (stacked) messages.
 
-**Requirements:** Both your client and the recipient's client must support XEP-0333 (Dino, Gajim, Conversations on Android).
+**Requirements:** Both your client and the recipient's client must support XEP-0333 (Dino, Gajim, Conversations on Android). Works in 1-on-1 chats only (not group chats).
 
 ## Why This Exists
 
