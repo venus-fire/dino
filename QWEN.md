@@ -57,6 +57,7 @@ git push origin vX.Y
 
 | Version | Date | Features |
 |---------|------|----------|
+| v0.3 | March 26, 2026 | Fixed read receipt positioning (checkmarks now appear directly after message text) |
 | v0.2 | March 22, 2026 | Read receipt indicators, XEP-0333 support |
 | v0.1 | March 20, 2026 | Text zoom feature, resizable sidebar |
 
@@ -114,7 +115,7 @@ dino/
 └── build/            # Build output (generated)
 ```
 
-## Building and Running
+## Building and Installation
 
 ### Prerequisites (Debian/Ubuntu)
 
@@ -127,19 +128,56 @@ sudo apt-get install -y meson ninja-build valac \
     libprotobuf-dev protobuf-compiler-grpc
 ```
 
-### Build Commands
+### Build
 
 ```bash
 # Configure
-meson setup build --prefix=$HOME/.local
+meson setup build
 
 # Compile
 meson compile -C build
+```
 
-# Run without installing
+### Run Without Installing
+
+```bash
+# Run directly from build folder
 ./build/main/dino
+```
 
-# Install system-wide
+### Desktop Integration (Recommended)
+
+To add Dino to your application menu:
+
+1. **Copy the desktop file:**
+   ```bash
+   sudo cp main/data/im.dino.Dino.desktop /usr/share/applications/
+   ```
+
+2. **Edit the Exec line** to point to your build folder:
+   ```bash
+   sudo nano /usr/share/applications/im.dino.Dino.desktop
+   ```
+   
+   Change:
+   ```
+   Exec=/home/venus/src/dino/build/main/dino %U
+   ```
+
+3. **Refresh desktop database:**
+   ```bash
+   sudo update-desktop-database
+   ```
+
+### Full System Installation (Optional)
+
+```bash
+# Install to /usr/local
+sudo meson install -C build
+sudo ldconfig
+
+# Or install to local prefix
+meson setup build --prefix=$HOME/.local
 sudo meson install -C build
 sudo ldconfig
 ```
@@ -232,11 +270,13 @@ Visual indicators showing message delivery and read status for sent messages.
 2. **Both clients must support XEP-0333** (Dino, Gajim, Conversations on Android)
 3. **Indicators are always visible** next to sent messages (not just in headers)
 4. **Real-time updates** as message status changes
+5. **Checkmarks appear directly after message text** using horizontal Box layout
 
 ### Modified Files
 
 | File | Changes |
 |------|---------|
+| `main/src/ui/conversation_content_view/conversation_item_skeleton.vala` | Refactored layout to use horizontal Box; checkmarks positioned after message text |
 | `main/src/ui/conversation_content_view/message_widget.vala` | Added read receipt indicator image and update logic |
 
 ### Technical Notes

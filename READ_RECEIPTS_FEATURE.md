@@ -47,7 +47,21 @@ A dedicated read receipt indicator was added directly to each sent message that:
 
 | File | Changes |
 |------|---------|
+| `main/src/ui/conversation_content_view/conversation_item_skeleton.vala` | Refactored read receipt positioning to use horizontal Box layout; checkmarks now appear directly after message text |
 | `main/src/ui/conversation_content_view/message_widget.vala` | Added read receipt indicator image and update logic |
+
+### UI Layout
+
+The read receipt indicator is positioned using a horizontal `Box` layout that contains both the message content and the checkmark icon:
+
+```vala
+// Message content box wraps message text + received_image
+message_content_box = new Box(Orientation.HORIZONTAL, 6);
+message_content_box.append(message_label);
+message_content_box.append(received_image);  // Always appears after message text
+```
+
+This ensures the checkmarks stay aligned with the message text regardless of message merging.
 
 ### Key Changes
 

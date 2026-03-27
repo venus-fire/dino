@@ -17,6 +17,7 @@ public class ConversationItemSkeleton : Plugins.ConversationItemWidgetInterface,
     public Image received_image { get; set; }
 
     private HashMap<int, Widget> content_widgets = new HashMap<int, Widget>();
+    private Box message_content_box = null;
 
     private bool show_skeleton_ = false;
     public bool show_skeleton {
@@ -53,7 +54,23 @@ public class ConversationItemSkeleton : Plugins.ConversationItemWidgetInterface,
         time_label = (Label) builder.get_object("time_label");
         avatar_picture = (AvatarPicture) builder.get_object("avatar_picture");
         encryption_image = (Image) builder.get_object("encrypted_image");
-        received_image = (Image) builder.get_object("marked_image");
+        
+        // Create message content box to hold message widgets and received_image together
+        message_content_box = new Box(Orientation.HORIZONTAL, 6) {
+            hexpand = true,
+            halign = Align.START
+        };
+        
+        // Create received_image - will be added to message_content_box
+        received_image = new Image() {
+            opacity = 0.4,
+            pixel_size = 20,
+            margin_top = 2,
+            margin_start = 6,
+            hexpand = false,
+            halign = Align.START,
+            valign = Align.START
+        };
 
         widget = item.get_widget(this, Plugins.WidgetType.GTK4) as Widget;
         if (widget != null) {
@@ -116,14 +133,27 @@ public class ConversationItemSkeleton : Plugins.ConversationItemWidgetInterface,
     public void set_widget(Object object, Plugins.WidgetType type, int priority) {
         foreach (var content_widget in content_widgets.values) {
             content_widget.unparent();
+            message_content_box.remove(content_widget);
         }
 
         content_widgets[priority] = (Widget) object;
-        int row_no = 1;
+        
+        // Add content widgets to the message_content_box in priority order (0 to 4)
         for (int i = 0; i < 5; i++) {
-            if (!content_widgets.has_key(i)) continue;
-            main_grid.attach(content_widgets[i], 1, row_no, 4, 1);
-            row_no++;
+            if (content_widgets.has_key(i)) {
+                message_content_box.append(content_widgets[i]);
+            }
+        }
+        
+        // Ensure received_image is at the end of the box (after message content)
+        if (received_image.parent != null) {
+            message_content_box.remove(received_image);
+        }
+        message_content_box.append(received_image);
+        
+        // Attach message_content_box to the grid if not already attached
+        if (message_content_box.parent != main_grid) {
+            main_grid.attach(message_content_box, 1, 1, 4, 1);
         }
     }
 
@@ -132,16 +162,18 @@ public class ConversationItemSkeleton : Plugins.ConversationItemWidgetInterface,
         name_label.visible = show_skeleton;
         time_label.visible = show_skeleton;
         encryption_image.visible = show_skeleton;
-        
-        // Always show received_image for sent messages with any status, even when merged
+
+        // Show received_image for sent messages with any status
         if (content_meta_item != null && content_meta_item.mark != Message.Marked.NONE) {
             received_image.visible = true;
         } else {
-            received_image.visible = show_skeleton;
+            received_image.visible = false;
         }
 
         if (show_skeleton || content_meta_item == null) {
             main_grid.add_css_class("has-skeleton");
+        } else {
+            main_grid.remove_css_class("has-skeleton");
         }
     }
 
@@ -329,6 +361,11 @@ public class ConversationItemSkeleton : Plugins.ConversationItemWidgetInterface,
             received_image.unparent();
             received_image.dispose();
             received_image = null;
+        }
+        if (message_content_box != null) {
+            message_content_box.unparent();
+            message_content_box.dispose();
+            message_content_box = null;
         }
         base.dispose();
     }

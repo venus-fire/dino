@@ -256,17 +256,18 @@ GtkBox (vertical)
 
 ```
 GtkGrid (main_grid)
-├── Avatar (row 1)
-├── Name label (row 1)
-├── Encryption icon (row 1, right side) ← Shows lock
-├── Received icon (row 1, right side) ← Shows checkmarks
-├── Message content widget (row 2+)
-└── Timestamp (row last, right side)
+├── Avatar (row 0, rowspan 2)
+├── Name label (row 0)
+├── Timestamp (row 0)
+├── Encryption icon (row 0)
+└── Box (row 1) ← NEW: Horizontal box containing:
+    ├── Message content widget
+    └── Received icon (checkmarks) ← Always appears after message text
 ```
 
 When `show_skeleton = false` (merged messages):
 - Avatar, name, timestamp, encryption icon are hidden
-- **Received icon should still show** (we fixed this)
+- Message content box remains visible with checkmarks directly after text
 
 ## XEP-0333 Chat Markers
 
@@ -346,6 +347,7 @@ CREATE INDEX message_account_marked_idx ON message(account_id, marked);
 | `main/src/ui/conversation_content_view/conversation_item_skeleton.vala` | Created `setup_mark_binding()` for all messages (including merged) |
 | `main/src/ui/conversation_content_view/conversation_item_skeleton.vala` | Fixed `update_margin()` to always show received_image for sent messages |
 | `main/src/ui/conversation_content_view/conversation_item_skeleton.vala` | Added `update_margin()` call in mark notify handler |
+| `main/src/ui/conversation_content_view/conversation_item_skeleton.vala` | **Refactored layout**: Use horizontal Box to position checkmarks directly after message text |
 | `main/data/conversation_view.ui` | Added read_marker_box UI element between messages and chat input |
 | `main/src/ui/conversation_view.vala` | Added `update_read_marker()` method and widget references |
 | `main/src/ui/conversation_view_controller.vala` | Added read marker tracking with notify handlers for ALL sent messages |
