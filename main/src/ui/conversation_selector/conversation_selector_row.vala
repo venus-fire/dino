@@ -28,8 +28,8 @@ public class ConversationSelectorRow : ListBoxRow {
     protected ContentItem? last_content_item;
     protected int num_unread = 0;
 
-
     protected StreamInteractor stream_interactor;
+    private Popover? context_popover = null;
 
     construct {
         name_label.attributes = new AttrList();
@@ -92,6 +92,44 @@ public class ConversationSelectorRow : ListBoxRow {
         update_name_label();
         update_pinned_icon();
         content_item_received();
+
+        GestureClick secondary_click_controller = new GestureClick();
+        secondary_click_controller.button = Gdk.BUTTON_SECONDARY;
+        secondary_click_controller.pressed.connect(on_secondary_click);
+        add_controller(secondary_click_controller);
+    }
+
+    private void on_secondary_click(GestureClick gesture_click_controller, int n_press, double x, double y) {
+        if (context_popover == null) {
+            context_popover = new Popover();
+            context_popover.set_parent(this);
+
+            Box box = new Box(Orientation.VERTICAL, 0);
+            Button remove_button = new Button.with_label(_("Remove from Sidebar")) {
+                halign = Align.FILL,
+                hexpand = true
+            };
+            remove_button.add_css_class("flat");
+            remove_button.clicked.connect(() => {
+                context_popover.popdown();
+                stream_interactor.get_module(ConversationManager.IDENTITY).close_conversation(conversation);
+            });
+            box.append(remove_button);
+
+            context_popover.set_child(box);
+        }
+
+        Gdk.Rectangle rectangle = { (int) x, (int) y, 1, 1 };
+        context_popover.set_pointing_to(rectangle);
+        context_popover.popup();
+    }
+
+    public override void dispose() {
+        if (context_popover != null) {
+            context_popover.unparent();
+            context_popover = null;
+        }
+        base.dispose();
     }
 
     public void update() {
