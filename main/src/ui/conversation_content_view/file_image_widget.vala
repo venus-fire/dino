@@ -15,7 +15,7 @@ public class FileImageWidget : Widget {
     }
     private State state = State.EMPTY;
 
-    private Stack stack = new Stack() { transition_duration=600, transition_type=StackTransitionType.CROSSFADE, hhomogeneous = false, vhomogeneous = false, interpolate_size = true };
+    private Stack stack = new Stack() { transition_duration=0, transition_type=StackTransitionType.NONE, hhomogeneous = false, vhomogeneous = false, interpolate_size = false };
     private Overlay overlay = new Overlay();
 
     private bool show_image_overlay_toolbar = false;
@@ -23,6 +23,7 @@ public class FileImageWidget : Widget {
     private Label file_size_label = new Label(null) { halign=Align.START, valign=Align.END, margin_bottom=4, margin_start=4, visible=false };
 
     private FileTransfer file_transfer;
+    private uint hide_progress_timeout = 0;
 
     private FileTransmissionProgress transmission_progress = new FileTransmissionProgress() { halign=Align.CENTER, valign=Align.CENTER, visible=false };
 
@@ -121,10 +122,16 @@ public class FileImageWidget : Widget {
         }
 
         if (file_transfer.state == IN_PROGRESS || file_transfer.state == NOT_STARTED || file_transfer.state == FAILED) {
+            clear_hide_progress_timeout();
             transmission_progress.visible = true;
             show_image_overlay_toolbar = false;
         } else if (transmission_progress.visible) {
-            Timeout.add(250, () => {
+            if (hide_progress_timeout != 0) return;
+
+            hide_progress_timeout = Timeout.add(250, () => {
+                hide_progress_timeout = 0;
+                if (file_transfer.state == IN_PROGRESS || file_transfer.state == NOT_STARTED || file_transfer.state == FAILED) return false;
+
                 transmission_progress.transferred_size = transmission_progress.file_size;
                 transmission_progress.visible = false;
                 show_image_overlay_toolbar = true;
@@ -149,6 +156,13 @@ public class FileImageWidget : Widget {
                 transmission_progress.state = UPLOAD_FAILED;
             }
         }
+    }
+
+    private void clear_hide_progress_timeout() {
+        if (hide_progress_timeout == 0) return;
+
+        Source.remove(hide_progress_timeout);
+        hide_progress_timeout = 0;
     }
 
     public async void load_from_file(File file, string file_name) throws GLib.Error {
@@ -237,6 +251,7 @@ public class FileImageWidget : Widget {
     }
 
     public override void dispose() {
+        clear_hide_progress_timeout();
         if (overlay != null && overlay.parent != null) overlay.unparent();
         base.dispose();
     }

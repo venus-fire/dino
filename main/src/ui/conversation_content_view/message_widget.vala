@@ -19,6 +19,7 @@ public class MessageMetaItem : ContentMetaItem {
     private StreamInteractor stream_interactor;
     private MessageItem message_item;
     public Plugins.ConversationItemWidgetInterface outer = null;
+    public Message.Marked marked { get; set; }
 
     // Font scale factor for text zoom (1.0 = 100%, range: 0.5 to 2.0)
     private double font_scale = 1.0;

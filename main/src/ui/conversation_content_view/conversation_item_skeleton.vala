@@ -63,7 +63,7 @@ public class ConversationItemSkeleton : Plugins.ConversationItemWidgetInterface,
             halign = Align.START
         };
 
-        // Create vertical box to stack message content and reactions
+        // Create vertical box to stack quotes above message content and reactions below.
         message_vertical_box = new Box(Orientation.VERTICAL, 2) {
             hexpand = true,
             halign = Align.START
@@ -144,13 +144,6 @@ public class ConversationItemSkeleton : Plugins.ConversationItemWidgetInterface,
     }
 
     public void set_widget(Object object, Plugins.WidgetType type, int priority) {
-        foreach (var content_widget in content_widgets.values) {
-            content_widget.unparent();
-            if (message_vertical_box != null) message_vertical_box.remove(content_widget);
-        }
-
-        content_widgets[priority] = (Widget) object;
-
         // Clear boxes by removing children
         Widget? child;
         while ((child = message_vertical_box.get_first_child()) != null) {
@@ -160,14 +153,21 @@ public class ConversationItemSkeleton : Plugins.ConversationItemWidgetInterface,
             message_content_box.remove(child);
         }
 
-        // Add message content (priority 0-2) to horizontal box with received_image
-        for (int i = 0; i <= 2; i++) {
-            if (content_widgets.has_key(i)) {
-                message_content_box.append(content_widgets[i]);
-            }
+        content_widgets[priority] = (Widget) object;
+
+        if (content_widgets.has_key(1)) {
+            content_widgets[1].halign = Align.START;
+            message_vertical_box.append(content_widgets[1]);
+        }
+
+        // Add the actual message content to a horizontal box with received_image.
+        for (int i = 0; i <= 2; i += 2) {
+            if (content_widgets.has_key(i)) message_content_box.append(content_widgets[i]);
         }
         // Ensure received_image is at the end of the horizontal box (after message content)
         message_content_box.append(received_image);
+
+        message_vertical_box.append(message_content_box);
 
         // Add reactions (priority 3) and other widgets to vertical box below message
         for (int i = 3; i < 5; i++) {
@@ -176,14 +176,9 @@ public class ConversationItemSkeleton : Plugins.ConversationItemWidgetInterface,
             }
         }
 
-        // Attach horizontal box (message + checkmarks) to grid
-        if (message_content_box.parent != main_grid) {
-            main_grid.attach(message_content_box, 1, 1, 4, 1);
-        }
-
-        // Attach vertical box (reactions) below the horizontal box
+        // Attach vertical box (quote, message + checkmarks, reactions) to grid
         if (message_vertical_box.parent != main_grid) {
-            main_grid.attach(message_vertical_box, 1, 2, 4, 1);
+            main_grid.attach(message_vertical_box, 1, 1, 4, 1);
         }
     }
 
